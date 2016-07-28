@@ -64,8 +64,11 @@ public class SimpleDriver {
         
         List <NodeAttachment> farmedOutNodes = new ArrayList <NodeAttachment>(); 
        
-        int TIME_SLICE = 5 ; //seconds
-        int MAX_TREE_SIZE_AFTER_TRIMMING = 10000 ;  
+        int TIME_SLICE = 60  ; //seconds
+        int MAX_TREE_SIZE_AFTER_TRIMMING = MAX_UNSOLVED_CHILD_NODES_PER_SUBTREE - 3 ; 
+        
+        //it appears to be better to keep migration to a minimum. 
+        //In other words, better to have fewer fat trees, than lots of thin trees
         
         int ITER_NUMBER = 0;
          
@@ -79,13 +82,20 @@ public class SimpleDriver {
             while (ZERO < treesLeft (  activeSubtreeList)) {
                 
                 ITER_NUMBER++;
+                logger.info("Starting Iteration  "+ ITER_NUMBER);
+                
+                if(ITER_NUMBER>TEN){
+                    TIME_SLICE *= 5;
+                    MAX_UNSOLVED_CHILD_NODES_PER_SUBTREE =TEN*THOUSAND;
+                }
                  
                 //solve active trees for time slice
                 for (int index = ZERO ; index < activeSubtreeList.size(); index ++){
                     ActiveSubtree tree = activeSubtreeList.get(index);
                     if (tree.isEntireSubtreeDiscardable()) continue ;
                     if (tree.isSolvedToCompletion()) continue ;
-                     
+                     logger.info("solving tree " +tree.getGUID() +"with  unsolved kids =  "+ 
+                             tree.getPendingChildNodeCount());
                     tree.solve( TIME_SLICE, bestKnownIncumbentValue);
                 }
                 

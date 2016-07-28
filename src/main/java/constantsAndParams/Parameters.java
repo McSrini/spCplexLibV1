@@ -9,7 +9,7 @@ public class Parameters implements Serializable{
     //should move to properties file
     
     //do not allow any subtree to grow bigger than this
-    public static double  MAX_UNSOLVED_CHILD_NODES_PER_SUBTREE =  TWO*TEN*THOUSAND ;
+    public static int  MAX_UNSOLVED_CHILD_NODES_PER_SUBTREE =   TEN ;
     
     public static double  RELATIVE_MIP_GAP = ZERO;
     

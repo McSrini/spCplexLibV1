@@ -16,6 +16,11 @@ import ilog.concert.IloNumVar;
 import ilog.cplex.IloCplex;
 import ilog.cplex.IloCplex.BranchDirection;
 import ilog.cplex.IloCplex.NodeId;
+import java.io.IOException;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.apache.log4j.PatternLayout;
+import org.apache.log4j.RollingFileAppender;
 
 /**
  * 
@@ -27,6 +32,19 @@ import ilog.cplex.IloCplex.NodeId;
  *
  */
 public class BranchHandler extends IloCplex.BranchCallback{
+    
+    private static Logger logger=Logger.getLogger(BranchHandler.class);
+      
+    static   {
+        
+        logger.setLevel(Level.DEBUG);
+        PatternLayout layout = new PatternLayout("%d{ISO8601} [%t] %-5p %c %x - %m%n");     
+        try {
+            logger.addAppender(new RollingFileAppender(layout,LOG_FOLDER+BranchHandler.class.getSimpleName()+PARTITION_ID+LOG_FILE_EXTENSION));
+        } catch (IOException ex) {
+             
+        }
+    }
         
     //meta data of the subtree which we are monitoring
     private SubtreeMetaData metaData;
@@ -53,20 +71,23 @@ public class BranchHandler extends IloCplex.BranchCallback{
         if ( getNbranches()> ZERO ){  
           
             //tree is branching
+            //logger.debug(this.metaData.getGUID() + " Tree is branching and it has this many pending nodes " +this.metaData.getLeafNodesPendingSolution().size() ) ;
             
             //first check if entire tree can be discarded
             if (canTreeBeDiscarded() || (canNodeBeDiscarded()&&isSubtreeRoot())   ){
                 
                 //no point solving this tree any longer 
+                 
                 metaData.setEntireTreeDiscardable();
                 abort();
                 
             } else  /*check if this node can be discarded*/ if (canNodeBeDiscarded()) {               
                 // this node and its kids are useless
+                 
                 prune();  
             } else {
                 //we must create the 2 kids
-                
+                               
                 //get the node attachment for this node, any child nodes will accumulate the branching conditions
                 NodeAttachment nodeData = (NodeAttachment) getNodeData();
                 if (nodeData==null ) { //it will be null for subtree root
@@ -115,7 +136,7 @@ public class BranchHandler extends IloCplex.BranchCallback{
 
                 }//end for 2 kids
                 
-                //check if number of unsolved kids has grown too large
+                //check if number of unsolved kids has grown too large                  
                 if (this.metaData.getLeafNodesPendingSolution().size()> MAX_UNSOLVED_CHILD_NODES_PER_SUBTREE) abort() ;
                 
             } //and if else
@@ -132,6 +153,8 @@ public class BranchHandler extends IloCplex.BranchCallback{
                     (nodeObjValue < getCutoff()) || (nodeObjValue <= bestKnownGlobalOptimum )  : 
                     (nodeObjValue > getCutoff()) || (nodeObjValue >= bestKnownGlobalOptimum );
 
+        /*if (result) logger.debug(  " Discard node   " + bestKnownGlobalOptimum + " " +getCutoff() +
+                " "+ nodeObjValue);*/
         return result;
     }
     
@@ -156,7 +179,10 @@ public class BranchHandler extends IloCplex.BranchCallback{
                                                (bestKnownGlobalOptimum<=getIncumbentObjValue()) && 
                                                (bestKnownGlobalOptimum<=getBestObjValue());
          
-        
+        /*if (inferiorityHaltConditionMax) logger.debug(  " Discard tree inferiorityHaltConditionMax " + bestKnownGlobalOptimum + " " +getIncumbentObjValue() +
+                " "+ getBestObjValue());
+        if (inferiorityHaltConditionMin) logger.debug(  " Discard tree inferiorityHaltConditionMin " + bestKnownGlobalOptimum + " " +getIncumbentObjValue() +
+                " "+ getBestObjValue());*/
         return  mipHaltCondition || inferiorityHaltConditionMin|| inferiorityHaltConditionMax;       
       
     }

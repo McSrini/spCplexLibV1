@@ -50,6 +50,10 @@ public class ActiveSubtree {
         solver = new Solver( cplex   , metaData);
     }
     
+    public String getGUID(){
+        return this.metaData.getGUID();
+    }
+    
     /**
      * 
      * Solve this subtree for some time

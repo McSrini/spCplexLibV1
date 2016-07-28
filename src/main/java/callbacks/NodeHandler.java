@@ -20,6 +20,16 @@ import org.apache.log4j.*;
 public class NodeHandler extends IloCplex.NodeCallback{
     
     private static Logger logger=Logger.getLogger(NodeHandler.class);
+    static   {
+        
+        logger.setLevel(Level.DEBUG);
+        PatternLayout layout = new PatternLayout("%d{ISO8601} [%t] %-5p %c %x - %m%n");     
+        try {
+            logger.addAppender(new RollingFileAppender(layout,LOG_FOLDER+NodeHandler.class.getSimpleName()+PARTITION_ID+LOG_FILE_EXTENSION));
+        } catch (IOException ex) {
+             
+        }
+    }
     
     //meta data of the subtree which we are monitoring
     private SubtreeMetaData metaData;
@@ -27,9 +37,6 @@ public class NodeHandler extends IloCplex.NodeCallback{
     public NodeHandler (SubtreeMetaData metaData) throws IOException {
         this.  metaData= metaData;
         
-        logger.setLevel(Level.DEBUG);
-        PatternLayout layout = new PatternLayout("%d{ISO8601} [%t] %-5p %c %x - %m%n");     
-        logger.addAppender(new RollingFileAppender(layout,LOG_FOLDER+this.getClass().getSimpleName()+PARTITION_ID+LOG_FILE_EXTENSION));
     }
  
     protected void main() throws IloException {
@@ -68,8 +75,9 @@ public class NodeHandler extends IloCplex.NodeCallback{
                 
             } else {
                 //no kids left to solve, we are done solving this subtree
-                logger.info("All kids migrated for tree" + metaData.getGUID());
+                logger.info("All kids migrated for tree " + metaData.getGUID());
                 this.metaData.setAllKidsMigratedAway();
+                abort();
             }            
             
         } else{
@@ -77,8 +85,9 @@ public class NodeHandler extends IloCplex.NodeCallback{
             //
             //I am not sure why the node callback will look for a node to solve, if there are no kids pending solution
             //
-            logger.info("No remaining nodes for tree" + metaData.getGUID());
-            this.metaData.setAllKidsMigratedAway();            
+            logger.info("No remaining nodes for tree " + metaData.getGUID());
+            this.metaData.setAllKidsMigratedAway();   
+            abort();
         }        
     }//end main method
 
