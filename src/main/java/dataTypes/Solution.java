@@ -19,6 +19,7 @@ public class Solution implements Serializable {
      * 
      */
     
+    //this object does not use any cplex status data structures directly, to ensure serializability
 
     private double objectiveValue;    
     

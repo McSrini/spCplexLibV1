@@ -25,12 +25,11 @@ public class Solver {
     //and the node handler
     private NodeHandler nodeHandler ;
          
-    public Solver (IloCplex cplex , SubtreeMetaData metaData ) throws IloException{
+    public Solver (IloCplex cplex , SubtreeMetaData metaData ) throws Exception{
             
         this.cplex=cplex;
         this.  metaData=  metaData;
         
-        IloLPMatrix lpMatrix = (IloLPMatrix) cplex .LPMatrixIterator().next();
         branchHandler = new BranchHandler(      metaData   );
         nodeHandler = new  NodeHandler (    metaData) ;
         
@@ -51,30 +50,21 @@ public class Solver {
         //others
     }
     
-    public boolean isEntireSubtreeDiscardable() {
-        return this.branchHandler.isEntireSubtreeDiscardable();
+    public boolean isEntireTreeDiscardable() {
+        return this.metaData.isEntireTreeDiscardable();
     }
     
-    public List<NodeAttachment> getMigrationCandidatesList(){
-        return this.branchHandler.getMigrationCandidatesList();
-    }
-
-    /**
-     * 
-     if this subtree had offered a node for migration, whether or not it was actually migrated is specified by wasCandidateChosenForMigration  
-     */
-    public IloCplex.Status solve(double timeSliceInSeconds,   boolean farmingInstruction, double bestKnownGlobalOptimum, boolean wasCandidateChosenForMigration   ) 
+    public IloCplex.Status solve(double timeSliceInSeconds,     double bestKnownGlobalOptimum   ) 
             throws IloException, IOException{
         
-        //inform branch handler of farming instruction and current incumbent, and whether any farmed node was  Chosen For Migration
-        branchHandler.reset( farmingInstruction,   wasCandidateChosenForMigration , bestKnownGlobalOptimum   );
+        //can we supply MIP  start along with bestKnownGlobalOptimum ?
+                
+        branchHandler.refresh(bestKnownGlobalOptimum);  
        
         cplex.setParam(IloCplex.Param.TimeLimit, timeSliceInSeconds); 
         cplex.solve();
         
         return cplex.getStatus();
     }
-    
-   
     
 }

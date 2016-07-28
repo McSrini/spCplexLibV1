@@ -10,29 +10,43 @@ import java.util.*;
  * 
  * @author srini
  * 
- * This object holds all the meta data associated with the ActiveSubtree.
+ * This object holds all the meta data associated with an ActiveSubtree.
  * Since we cannot traverse the ILOCPLEX object at will, we store relevant information here.
  *
  */
 public class SubtreeMetaData {
-
+ 
     //GUID used to identify the ActiveSubtree
     private final String guid ;
-  
-    //keeps note of all the INT variables in the model
-    //used  to find bound tightenings when spawning kids.
-    private final IloNumVar[] intVars ;  
     
     //keep note of the root Node Attachment used to create this subtree
     private final NodeAttachment rootNodeAttachment ;
-    
-    //sometimes we find that the entire subtree can be discarded
-    private boolean canDiscardEntireSubTree  = false;  
         
-    //keep a list of unsolved leaf nodes.
-    //These may be useful later on, when making farming decisions.
-    //These are child nodes that were spawned, but never picked up for solving.
-    private Map<NodeId, NodeAttachment> unsolvedLeafNodes = new HashMap<NodeId, NodeAttachment>();
+    //We keep track of the child nodes that were spawned, but not yet picked up for solving.
+    //These are the nodes that are available for farming.
+    //If  a node is selected from this list for migration, then it must be removed from this list since it will be solved outside this subtree.    
+    private Map<String, NodeAttachment> leafNodesPendingSolution = new HashMap<String, NodeAttachment>();
+       
+    //When a node is picked up in the solve callback from the list leafNodesPendingSolution, the node should be moved into the list 'nodeBeingSolved'
+    //Note that this map will always have <= 1 entry.  Initially when we are solving the subtree root , this list
+    // has no entry. After that , any child node picked up for solving is inserted here.
+    private Map<NodeId, NodeAttachment> nodeBeingSolved = new HashMap<NodeId, NodeAttachment>();
+    
+    //note that this tree has been solved to completion if these conditions are met:
+    // 1) the status is = optimal OR infeasible OR unbounded OR error
+    // 2) the node callback went looking for kids to solve, and found that all kids were migrated away (i.e. leafNodesPendingSolution is empty)
+     private boolean allKidsMigratedAway  = false;  
+     
+    //not sure what CPLEX does when the LP relaxation is integer feasible, and option has been set to find all optimal solutions
+    //In such cases, we will stop solving this node, whereas CPLEX may have gone on to find other optimal solutions
+    
+    //sometimes we find that the entire subtree can be discarded, because it cannot beat the incumbent 
+    private boolean canDiscardEntireSubTree  = false;  
+    
+    //keep note of all the INT variables in the model
+    // these are used  to find bound tightenings when spawning kids.
+    private final IloNumVar[] intVars ; 
+        
     
     public SubtreeMetaData( NodeAttachment attachment, IloNumVar[] intVars){
         guid = UUID.randomUUID().toString();
@@ -52,24 +66,47 @@ public class SubtreeMetaData {
         return rootNodeAttachment;
     }
     
-    public void addUnsolvedLeafNodes (NodeId nodeID, NodeAttachment attachment) {
-        unsolvedLeafNodes.put(nodeID, attachment);
+    public void setAllKidsMigratedAway (){
+        allKidsMigratedAway = true;
+    }
+    public boolean areAllKidsMigratedAway (){
+        return allKidsMigratedAway ;
     }
     
-    public void removeUnsolvedLeafNodes (NodeId nodeID) {        
-        unsolvedLeafNodes.remove(nodeID);
+    public void addUnsolvedLeafNodes (String nodeID, NodeAttachment attachment) {
+        leafNodesPendingSolution.put(nodeID , attachment);
     }
     
-    public Map<NodeId, NodeAttachment> getUnsolvedLeafNodes () {
-        return Collections.unmodifiableMap(unsolvedLeafNodes);
+    public NodeAttachment removeUnsolvedLeafNode (String nodeID) {        
+        return leafNodesPendingSolution.remove(nodeID);
+    }
+    
+    public List<NodeAttachment> removeUnsolvedLeafNodes ( int count) {        
+        List <String> nodeList = new ArrayList <String>();
+        nodeList.addAll(        leafNodesPendingSolution.keySet());
+         
+        List <NodeAttachment> farmedOutNodes = new ArrayList <NodeAttachment>(); 
+        while (count > ZERO && count <=nodeList.size()) {
+            farmedOutNodes.add(removeUnsolvedLeafNode(nodeList.get(count-ONE)));
+            count = count -1;
+        }
+        return farmedOutNodes;
+    }
+    
+    public Map<String, NodeAttachment> getLeafNodesPendingSolution () {
+        return Collections.unmodifiableMap(leafNodesPendingSolution);
     }
     
     public void setEntireTreeDiscardable() {
         this.canDiscardEntireSubTree= true;
     }
     
-    public boolean getIsEntireTreeDiscardable() {
+    public boolean isEntireTreeDiscardable() {
         return this.canDiscardEntireSubTree ;
     }
     
+    public void setNodeBeingSolved(NodeId nodeID, NodeAttachment attachment) {
+        nodeBeingSolved.clear();
+        nodeBeingSolved.put(nodeID, attachment);
+    }
 }

@@ -12,6 +12,7 @@ import ilog.concert.IloException;
 import ilog.concert.IloLPMatrix;
 import ilog.cplex.IloCplex;
 import static constantsAndParams.Constants.*;
+import java.util.ArrayList;
 
 /**
  * 
@@ -32,8 +33,7 @@ public class ActiveSubtree {
     private SubtreeMetaData metaData  ;
         
     //a solver object that is used to solve this tree few seconds at a time 
-    private Solver solver ;   
-   
+    private Solver solver ;      
 
     //Constructor
     public ActiveSubtree (  NodeAttachment attachment) throws  Exception  {
@@ -52,22 +52,28 @@ public class ActiveSubtree {
     
     /**
      * 
-     * Solve this subtree for some time, and return nodes which can be migrated.
+     * Solve this subtree for some time
      * Subtree meta data will be updated by the solver.
      */
-    public List<NodeAttachment> solve ( double timeSliceInSeconds, boolean farmingInstruction, double bestKnownGlobalOptimum  ,
-            boolean wasCandidateChosenForMigration) throws IloException, IOException{
+    public IloCplex.Status solve ( double timeSliceInSeconds,         double bestKnownGlobalOptimum )
+            throws IloException, IOException{
         
         //solve for some time
-        solver.solve( timeSliceInSeconds,     farmingInstruction,   bestKnownGlobalOptimum,   wasCandidateChosenForMigration );
+        return solver.solve( timeSliceInSeconds, bestKnownGlobalOptimum );
         
-        return solver.getMigrationCandidatesList();
     }
  
+    public boolean isSolvedToCompletion() throws Exception {
+        boolean retval = this.metaData.areAllKidsMigratedAway() || this.isOptimal()||this.isInError()
+                ||this.isUnFeasible()||this.isUnbounded();
+        
+        return  retval;
+    }
+    
     public boolean isEntireSubtreeDiscardable() {
-        //can we check the cutoff of the ILO-CPLEX object , and use the best known global optimum, before we
-        //ask the solver object ?
-        return this.solver.isEntireSubtreeDiscardable();
+        //can we check the cutoff of the ILO-CPLEX object , and use the best known global optimum, in 
+        //addition to this flag?
+        return this.metaData.isEntireTreeDiscardable();
     }
     
     public String toString(){
@@ -93,6 +99,18 @@ public class ActiveSubtree {
         return soln;
     }
     
+    public int getPendingChildNodeCount () {
+        return this.metaData.getLeafNodesPendingSolution().size();
+    }
+    
+    public List <NodeAttachment> farmOutNodes (int threshold) {
+         List <NodeAttachment> farmedOutNodes = new ArrayList <NodeAttachment>(); 
+         while (getPendingChildNodeCount() > threshold) {
+             farmedOutNodes.addAll(this.metaData.removeUnsolvedLeafNodes(getPendingChildNodeCount() - threshold ));
+         }
+         return farmedOutNodes;
+    }
+    
     public boolean isFeasible () throws IloException {
         return cplex.getStatus().equals(IloCplex.Status.Feasible) ;
     }
@@ -102,6 +120,7 @@ public class ActiveSubtree {
     }
     
     public boolean isOptimal() throws IloException {
+        
         return cplex.getStatus().equals(IloCplex.Status.Optimal) ;
     }
     public boolean isOptimalOrFeasible() throws IloException {
@@ -119,6 +138,5 @@ public class ActiveSubtree {
         double inferiorObjective = isMaximization?  MINUS_INFINITY:PLUS_INFINITY;
         return isFeasible() || isOptimal() ? cplex.getObjValue():inferiorObjective;
     }
-        
-    
+            
 }
