@@ -5,6 +5,7 @@ import ilog.concert.IloNumVar;
 import ilog.cplex.IloCplex.NodeId;
 
 import java.util.*;
+import java.util.Map.Entry;
 
 /**
  * 
@@ -81,6 +82,12 @@ public class SubtreeMetaData {
         return leafNodesPendingSolution.remove(nodeID);
     }
     
+    public NodeAttachment removeUnsolvedLeafNode ( ) {   
+        List <String> nodeList = new ArrayList <String>();
+        nodeList.addAll(        leafNodesPendingSolution.keySet());
+        return leafNodesPendingSolution.remove(nodeList.get(ZERO));
+    }
+    
     public List<NodeAttachment> removeUnsolvedLeafNodes ( int count) {        
         List <String> nodeList = new ArrayList <String>();
         nodeList.addAll(        leafNodesPendingSolution.keySet());
@@ -95,6 +102,17 @@ public class SubtreeMetaData {
     
     public Map<String, NodeAttachment> getLeafNodesPendingSolution () {
         return Collections.unmodifiableMap(leafNodesPendingSolution);
+    }
+    
+    public Map<String, NodeAttachmentMetadata> getMetadataForLeafNodesPendingSolution () {
+        Map<String, NodeAttachmentMetadata> map = new HashMap<String, NodeAttachmentMetadata> ();
+        for(Entry<String , NodeAttachment> entry:leafNodesPendingSolution.entrySet()){
+            NodeAttachmentMetadata metadata =entry.getValue().metadata;
+            metadata.treeGuid = this.getGUID();
+            map.put(entry.getKey(),metadata );
+        }
+        
+        return Collections.unmodifiableMap(map);
     }
     
     public void setEntireTreeDiscardable() {

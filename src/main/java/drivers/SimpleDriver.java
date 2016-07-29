@@ -1,7 +1,6 @@
 package drivers;
 
-import callbacks.NodeHandler;
-import static constantsAndParams.Constants.SAV_FILENAME;
+import callbacks.NodeHandler; 
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -64,8 +63,8 @@ public class SimpleDriver {
         
         List <NodeAttachment> farmedOutNodes = new ArrayList <NodeAttachment>(); 
        
-        int TIME_SLICE = 60  ; //seconds
-        int MAX_TREE_SIZE_AFTER_TRIMMING = MAX_UNSOLVED_CHILD_NODES_PER_SUBTREE - 3 ; 
+        int TIME_SLICE = TEN*SIX  ; //seconds
+        int MAX_TREE_SIZE_AFTER_TRIMMING = MAX_UNSOLVED_CHILD_NODES_PER_SUB_TREE - FIVE ; 
         
         //it appears to be better to keep migration to a minimum. 
         //In other words, better to have fewer fat trees, than lots of thin trees
@@ -81,12 +80,13 @@ public class SimpleDriver {
            
             while (ZERO < treesLeft (  activeSubtreeList)) {
                 
-                ITER_NUMBER++;
                 logger.info("Starting Iteration  "+ ITER_NUMBER);
                 
-                if(ITER_NUMBER>TEN){
-                    TIME_SLICE *= 5;
-                    MAX_UNSOLVED_CHILD_NODES_PER_SUBTREE =TEN*THOUSAND;
+                if(ITER_NUMBER>=TEN){
+                    //drastic increase to time slice, and allowed size of each sub-tree
+                    TIME_SLICE *= FIVE;
+                    MAX_UNSOLVED_CHILD_NODES_PER_SUB_TREE *=THOUSAND;
+                    MAX_TREE_SIZE_AFTER_TRIMMING = MAX_UNSOLVED_CHILD_NODES_PER_SUB_TREE - TEN ; 
                 }
                  
                 //solve active trees for time slice
@@ -94,7 +94,7 @@ public class SimpleDriver {
                     ActiveSubtree tree = activeSubtreeList.get(index);
                     if (tree.isEntireSubtreeDiscardable()) continue ;
                     if (tree.isSolvedToCompletion()) continue ;
-                     logger.info("solving tree " +tree.getGUID() +"with  unsolved kids =  "+ 
+                     logger.info("solving tree " +tree.getGUID() +" with  unsolved kids =  "+ 
                              tree.getPendingChildNodeCount());
                     tree.solve( TIME_SLICE, bestKnownIncumbentValue);
                 }
@@ -124,6 +124,9 @@ public class SimpleDriver {
                     activeSubtreeList.add(new ActiveSubtree(node));
                 }
                 farmedOutNodes = new ArrayList <NodeAttachment>(); 
+                
+                //net iteration
+                ITER_NUMBER++;
                 
             }   
             

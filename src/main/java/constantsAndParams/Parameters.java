@@ -8,9 +8,11 @@ public class Parameters implements Serializable{
     
     //should move to properties file
     
-    //do not allow any subtree to grow bigger than this
-    public static int  MAX_UNSOLVED_CHILD_NODES_PER_SUBTREE =   TEN ;
     
+    public static final String SAV_FILENAME="F:\\temporary files here\\timtab1.mps";    
+    //do not allow any subtree to grow bigger than this
+    public static int  MAX_UNSOLVED_CHILD_NODES_PER_SUB_TREE  =   TEN  ; //small number at the outset, icreaed later
+     
     public static double  RELATIVE_MIP_GAP = ZERO;
     
     //search strategy

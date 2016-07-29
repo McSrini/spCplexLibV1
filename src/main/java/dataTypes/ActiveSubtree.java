@@ -12,7 +12,9 @@ import ilog.concert.IloException;
 import ilog.concert.IloLPMatrix;
 import ilog.cplex.IloCplex;
 import static constantsAndParams.Constants.*;
+import static constantsAndParams.Parameters.SAV_FILENAME;
 import java.util.ArrayList;
+import java.util.Map;
 
 /**
  * 
@@ -107,10 +109,18 @@ public class ActiveSubtree {
         return this.metaData.getLeafNodesPendingSolution().size();
     }
     
+    public  Map<String, NodeAttachment>  getPendingChildNodes () {
+        return this.metaData.getLeafNodesPendingSolution();
+    }
+    
+    public Map<String, NodeAttachmentMetadata> getMetadataForLeafNodesPendingSolution () {
+        return this.metaData.getMetadataForLeafNodesPendingSolution();
+    }
+    
     public List <NodeAttachment> farmOutNodes (int threshold) {
          List <NodeAttachment> farmedOutNodes = new ArrayList <NodeAttachment>(); 
          while (getPendingChildNodeCount() > threshold) {
-             farmedOutNodes.addAll(this.metaData.removeUnsolvedLeafNodes(getPendingChildNodeCount() - threshold ));
+             farmedOutNodes.add(this.metaData.removeUnsolvedLeafNode( ));
          }
          return farmedOutNodes;
     }

@@ -111,9 +111,9 @@ public class Solution implements Serializable {
     }
 
     public String toString (){
-        String result=BLANKSPACE; 
+        String result=NEWLINE; 
         if (this.isFeasibleOrOptimal()){
-            result =    this.getObjectiveValue()  +NEWLINE  ;
+            result +=    this.getObjectiveValue()  +NEWLINE  ;
             
             for (Map.Entry<String, Double >  entry :variableMap.entrySet()) {
                 result += entry.getKey() + BLANKSPACE + entry.getValue() +NEWLINE;

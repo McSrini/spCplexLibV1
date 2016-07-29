@@ -137,7 +137,7 @@ public class BranchHandler extends IloCplex.BranchCallback{
                 }//end for 2 kids
                 
                 //check if number of unsolved kids has grown too large                  
-                if (this.metaData.getLeafNodesPendingSolution().size()> MAX_UNSOLVED_CHILD_NODES_PER_SUBTREE) abort() ;
+                if (this.metaData.getLeafNodesPendingSolution().size()> MAX_UNSOLVED_CHILD_NODES_PER_SUB_TREE) abort() ;
                 
             } //and if else
         }//end getNbranches()> ZERO
